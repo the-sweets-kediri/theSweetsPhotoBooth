@@ -1,26 +1,23 @@
+const SUPABASE_URL = "https://ayalafmqetfunliexrng.supabase.co"
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5YWxhZm1xZXRmdW5saWV4cm5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDM3MjMsImV4cCI6MjA5NzgxOTcyM30.hbBHLllj5eJLFSkK-CIb32Zxu1a4oitTPqZ-81fMg-U"
+const BUCKET_NAME = "Photobooth"
+const SIGNED_URL_TTL_SECONDS = 60 * 10
+const EXPORT_STRIP_WIDTH = 720
+const EXPORT_SCALE = 3
+
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
 const video = document.getElementById("video")
 const strip = document.getElementById("photos")
 const counter = document.getElementById("countdown")
 const retakeBtn = document.getElementById("retakeBtn")
-const printBtn = document.getElementById("printBtn")
-const stopBtn = document.getElementById("stopBtn")
-const qrStatus = document.getElementById("qrStatus")
-const qrCountdown = document.getElementById("qrCountdown")
 const qrCanvas = document.getElementById("qrCanvas")
+const qrStatus = document.getElementById("qrStatus")
 const downloadLink = document.getElementById("downloadLink")
 
-const SUPABASE_URL = "https://ayalafmqetfunliexrng.supabase.co"
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdWJhYmFzZSIsInJlZiI6ImF5YWxhZm1xZXRmdW5saWV4cm5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDM3MjMsImV4cCI6MjA5NzgxOTcyM30.hbBHLllj5eJLFSkK-CIb32Zxu1a4oitTPqZ-81fMg-U"
-const BUCKET_NAME = "Photobooth"
-const SIGNED_URL_TTL_SECONDS = 60 * 10
-const QR_RESET_TIMEOUT_MS = 20000
+const sessionDuration = 120000
+const photoDelay = 7
 const MAX_PHOTOS = 3
-const PHOTO_DELAY = 7
-const SESSION_DURATION = 120000
-const EXPORT_WIDTH = 700
-const EXPORT_SCALE = 3
-
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 let retakeLeft = 2
 let sessionStartTime = null
@@ -28,8 +25,7 @@ let animationFrame = null
 let capturing = false
 let isSessionActive = false
 let isUploading = false
-let qrResetTimer = null
-let qrCountdownInterval = null
+let qrResetTimeout = null
 
 const captions = [
   "Life is sweeter with you 🍰",
@@ -51,34 +47,22 @@ const captions2 = [
   "Sweet memories start here"
 ]
 
-function wait(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms))
+function goInstruction(){
+  clearQrResetTimeout()
+  showScreen("instructionScreen")
 }
 
-function showScreen(id) {
-  document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"))
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach((screen) => screen.classList.remove("active"))
   document.getElementById(id).classList.add("active")
 }
 
-function setRandomCaption() {
-  const el1 = document.getElementById("randomCaption")
-  const el2 = document.getElementById("randomCaption2")
-
-  if (el1) {
-    el1.innerText = captions[Math.floor(Math.random() * captions.length)]
-  }
-
-  if (el2) {
-    el2.innerText = captions2[Math.floor(Math.random() * captions2.length)]
-  }
-}
-
-function updateDateTime() {
+function updateDateTime(){
   const el = document.getElementById("datetime")
-  if (!el) return
+  if(!el) return
 
   const now = new Date()
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
   const day = now.getDate()
   const month = months[now.getMonth()]
   const year = now.getFullYear()
@@ -88,75 +72,67 @@ function updateDateTime() {
   el.innerText = `${day} ${month} ${year} | ${hours}:${mins}`
 }
 
-function updateRetakeUI() {
+function setRandomCaption(){
+  const random = captions[Math.floor(Math.random() * captions.length)]
+  const random2 = captions2[Math.floor(Math.random() * captions2.length)]
+  const el1 = document.getElementById("randomCaption")
+  const el2 = document.getElementById("randomCaption2")
+
+  if(el1) el1.innerText = random
+  if(el2) el2.innerText = random2
+}
+
+function updateRetakeUI(){
   retakeBtn.innerText = `🔁 Coba Lagi (${retakeLeft})`
 }
 
-function toggleActionButtons() {
-  const photoCount = strip.children.length
-  retakeBtn.disabled = isUploading || capturing || retakeLeft <= 0
-  printBtn.disabled = isUploading || capturing || photoCount < MAX_PHOTOS
-  stopBtn.disabled = isUploading
-}
-
-function resetProgressBar() {
+function resetProgressBar(){
   document.getElementById("progressTop").style.width = "0%"
   document.getElementById("progressRight").style.height = "0%"
   document.getElementById("progressBottom").style.width = "0%"
   document.getElementById("progressLeft").style.height = "0%"
-  document.getElementById("progressTop").style.opacity = "1"
-  document.getElementById("progressRight").style.opacity = "1"
-  document.getElementById("progressBottom").style.opacity = "1"
-  document.getElementById("progressLeft").style.opacity = "1"
 }
 
-function clearQrResetTimers() {
-  if (qrResetTimer) {
-    clearTimeout(qrResetTimer)
-    qrResetTimer = null
+function clearQrResetTimeout(){
+  if(qrResetTimeout){
+    clearTimeout(qrResetTimeout)
+    qrResetTimeout = null
   }
-
-  if (qrCountdownInterval) {
-    clearInterval(qrCountdownInterval)
-    qrCountdownInterval = null
-  }
-
-  qrCountdown.innerText = ""
 }
 
-function scheduleQrReset(ms = QR_RESET_TIMEOUT_MS) {
-  clearQrResetTimers()
-
-  let secondsLeft = Math.ceil(ms / 1000)
-  qrCountdown.innerText = `Kembali ke layar awal dalam ${secondsLeft} detik`
-
-  qrCountdownInterval = setInterval(() => {
-    secondsLeft -= 1
-    if (secondsLeft > 0) {
-      qrCountdown.innerText = `Kembali ke layar awal dalam ${secondsLeft} detik`
-    }
-  }, 1000)
-
-  qrResetTimer = setTimeout(() => {
-    clearQrResetTimers()
-    stopSessionForce()
-  }, ms)
+function stopCameraStream(){
+  const stream = video.srcObject
+  if(!stream) return
+  stream.getTracks().forEach((track) => track.stop())
+  video.srcObject = null
 }
 
-function startSessionTimer() {
+function resetSession(){
+  retakeLeft = 2
+  updateRetakeUI()
+  strip.innerHTML = ""
+  counter.innerText = ""
+  isSessionActive = false
+  capturing = false
+  isUploading = false
+  updateDateTime()
+  setRandomCaption()
+}
+
+function startSessionTimer(){
   cancelAnimationFrame(animationFrame)
   sessionStartTime = Date.now()
   runTimer()
 }
 
-function runTimer() {
+function runTimer(){
   const now = Date.now()
   const elapsed = now - sessionStartTime
-  const remaining = SESSION_DURATION - elapsed
+  const remaining = sessionDuration - elapsed
 
   updateProgressSmooth(elapsed)
 
-  if (remaining <= 0) {
+  if(remaining <= 0){
     cancelAnimationFrame(animationFrame)
     alert("Waktu habis")
     stopSessionForce()
@@ -166,8 +142,8 @@ function runTimer() {
   animationFrame = requestAnimationFrame(runTimer)
 }
 
-function updateProgressSmooth(elapsed) {
-  const percent = Math.min(1, elapsed / SESSION_DURATION) * 100
+function updateProgressSmooth(elapsed){
+  const percent = Math.min(1, elapsed / sessionDuration) * 100
   const top = document.getElementById("progressTop")
   const right = document.getElementById("progressRight")
   const bottom = document.getElementById("progressBottom")
@@ -178,34 +154,39 @@ function updateProgressSmooth(elapsed) {
   bottom.style.width = "0%"
   left.style.height = "0%"
 
-  if (percent <= 25) {
-    top.style.width = `${(percent / 25) * 100}%`
-  } else if (percent <= 50) {
+  if(percent <= 25){
+    top.style.width = (percent / 25) * 100 + "%"
+  }else if(percent <= 50){
     top.style.width = "100%"
-    right.style.height = `${((percent - 25) / 25) * 100}%`
-  } else if (percent <= 75) {
+    right.style.height = ((percent - 25) / 25) * 100 + "%"
+  }else if(percent <= 75){
     top.style.width = "100%"
     right.style.height = "100%"
-    bottom.style.width = `${((percent - 50) / 25) * 100}%`
-  } else {
+    bottom.style.width = ((percent - 50) / 25) * 100 + "%"
+  }else{
     top.style.width = "100%"
     right.style.height = "100%"
     bottom.style.width = "100%"
-    left.style.height = `${((percent - 75) / 25) * 100}%`
+    left.style.height = ((percent - 75) / 25) * 100 + "%"
   }
 
-  if (percent > 90) {
-    const flashOpacity = Math.sin(Date.now() / 100) > 0 ? 1 : 0.35
-    top.style.opacity = flashOpacity
-    right.style.opacity = flashOpacity
-    bottom.style.opacity = flashOpacity
-    left.style.opacity = flashOpacity
+  if(percent > 90){
+    const blink = Math.sin(Date.now() / 100) > 0 ? 1 : 0.3
+    top.style.opacity = blink
+    right.style.opacity = blink
+    bottom.style.opacity = blink
+    left.style.opacity = blink
+  }else{
+    top.style.opacity = 1
+    right.style.opacity = 1
+    bottom.style.opacity = 1
+    left.style.opacity = 1
   }
 
-  const r = Math.floor(255 - (percent * 0.1))
-  const g = Math.floor(94 - (percent * 0.35))
-  const b = Math.floor(162 - (percent * 0.55))
-  const color = `rgb(${Math.max(r, 196)}, ${Math.max(g, 24)}, ${Math.max(b, 84)})`
+  const r = Math.floor(46 + (231 - 46) * (percent / 100))
+  const g = Math.floor(204 - (204 - 76) * (percent / 100))
+  const b = Math.floor(113 - (113 - 60) * (percent / 100))
+  const color = `rgb(${r},${g},${b})`
 
   top.style.background = color
   right.style.background = color
@@ -213,30 +194,8 @@ function updateProgressSmooth(elapsed) {
   left.style.background = color
 }
 
-function resetSession() {
-  retakeLeft = 2
-  strip.innerHTML = ""
-  capturing = false
-  isSessionActive = false
-  counter.innerText = ""
-  clearQrResetTimers()
-  updateRetakeUI()
-  updateDateTime()
-  setRandomCaption()
-  resetProgressBar()
-  qrStatus.innerText = "Menyiapkan link download..."
-  downloadLink.href = "#"
-  toggleActionButtons()
-}
-
-function goInstruction() {
-  clearQrResetTimers()
-  stopCameraStream()
-  showScreen("instructionScreen")
-}
-
-async function startSession() {
-  clearQrResetTimers()
+async function startSession(){
+  clearQrResetTimeout()
   showScreen("cameraScreen")
   resetSession()
 
@@ -244,7 +203,7 @@ async function startSession() {
     await startCamera()
   } catch (err) {
     console.error("Camera start failed:", err)
-    alert("Kamera gagal dibuka. Pastikan izin kamera diizinkan dan halaman dibuka via HTTPS atau localhost.")
+    alert("Kamera gagal dibuka. Pastikan izin kamera diizinkan dan halaman dibuka via HTTPS / localhost.")
     showScreen("instructionScreen")
     return
   }
@@ -253,12 +212,12 @@ async function startSession() {
   startCapture()
 }
 
-async function startCamera() {
+async function startCamera(){
   const existingStream = video.srcObject
-  if (existingStream) {
-    const hasLiveTrack = existingStream.getVideoTracks().some(track => track.readyState === "live")
-    if (hasLiveTrack) {
-      if (video.readyState >= 2) {
+  if(existingStream){
+    const hasLiveTrack = existingStream.getVideoTracks().some((track) => track.readyState === "live")
+    if(hasLiveTrack){
+      if(video.readyState >= 2){
         await video.play()
       }
       return
@@ -268,8 +227,9 @@ async function startCamera() {
   const stream = await navigator.mediaDevices.getUserMedia({
     video: {
       facingMode: "user",
-      width: { ideal: 2560 },
-      height: { ideal: 1440 }
+      width: { ideal: 3840 },
+      height: { ideal: 2160 },
+      frameRate: { ideal: 30, max: 30 }
     },
     audio: false
   })
@@ -287,7 +247,7 @@ async function startCamera() {
       }
     }
 
-    if (video.readyState >= 1 && video.videoWidth && video.videoHeight) {
+    if(video.readyState >= 1 && video.videoWidth && video.videoHeight){
       onReady()
       return
     }
@@ -296,165 +256,142 @@ async function startCamera() {
   })
 }
 
-function stopCameraStream() {
-  const stream = video.srcObject
-  if (!stream) return
-
-  stream.getTracks().forEach(track => track.stop())
-  video.srcObject = null
-}
-
-async function startCapture() {
-  if (capturing) return
-
-  capturing = true
-  isSessionActive = true
-  strip.innerHTML = ""
-  counter.innerText = ""
-  setRandomCaption()
-  toggleActionButtons()
-
-  for (let i = 0; i < MAX_PHOTOS; i += 1) {
-    if (!isSessionActive) break
-
-    await countdown(PHOTO_DELAY)
-    if (!isSessionActive) break
-
-    const dataUrl = captureCurrentFrame()
-    const image = document.createElement("img")
-    image.src = dataUrl
-    image.alt = `Photo ${i + 1}`
-    strip.appendChild(image)
-    flash()
-    toggleActionButtons()
-  }
-
-  capturing = false
-  counter.innerText = ""
-  toggleActionButtons()
-}
-
-function captureCurrentFrame() {
-  if (!video.videoWidth || !video.videoHeight) {
-    throw new Error("Kamera belum siap")
-  }
-
-  const canvas = document.createElement("canvas")
-  canvas.width = video.videoWidth || 1920
-  canvas.height = video.videoHeight || 1080
-
-  const ctx = canvas.getContext("2d")
-  ctx.imageSmoothingEnabled = true
-  ctx.imageSmoothingQuality = "high"
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-
-  return canvas.toDataURL("image/png")
-}
-
-function flash() {
-  const flashLayer = document.createElement("div")
-  flashLayer.style.position = "fixed"
-  flashLayer.style.top = 0
-  flashLayer.style.left = 0
-  flashLayer.style.width = "100%"
-  flashLayer.style.height = "100%"
-  flashLayer.style.background = "white"
-  flashLayer.style.zIndex = 9999
-  flashLayer.style.opacity = 0.9
-  document.body.appendChild(flashLayer)
-  setTimeout(() => flashLayer.remove(), 120)
-}
-
-function countdown(sec) {
-  return new Promise(resolve => {
-    let remaining = sec
-    counter.innerText = remaining
+async function countdown(sec){
+  return new Promise((resolve) => {
+    let i = sec
+    counter.innerText = i
 
     const timer = setInterval(() => {
-      if (!isSessionActive) {
+      if(!isSessionActive){
         clearInterval(timer)
         counter.innerText = ""
         resolve()
         return
       }
 
-      remaining -= 1
+      i--
+      counter.innerText = i > 0 ? i : ""
 
-      if (remaining <= 0) {
+      if(i <= 0){
         clearInterval(timer)
-        counter.innerText = ""
         resolve()
-        return
       }
-
-      counter.innerText = remaining
     }, 1000)
   })
 }
 
-function retake() {
-  if (capturing || isUploading) return
+function flash(){
+  const f = document.createElement("div")
+  f.style.position = "fixed"
+  f.style.top = 0
+  f.style.left = 0
+  f.style.width = "100%"
+  f.style.height = "100%"
+  f.style.background = "white"
+  f.style.zIndex = 9999
+  document.body.appendChild(f)
+  setTimeout(() => f.remove(), 120)
+}
 
-  if (retakeLeft <= 0) {
+async function startCapture(){
+  if(capturing) return
+  if(!video.videoWidth || !video.videoHeight){
+    alert("Kamera belum siap. Coba mulai lagi.")
+    return
+  }
+
+  capturing = true
+  isSessionActive = true
+  setRandomCaption()
+  strip.innerHTML = ""
+
+  for(let i = 0; i < MAX_PHOTOS; i++){
+    if(!isSessionActive) break
+
+    await countdown(photoDelay)
+    if(!isSessionActive) break
+
+    const canvas = document.createElement("canvas")
+    canvas.width = video.videoWidth || 1920
+    canvas.height = video.videoHeight || 1080
+
+    const ctx = canvas.getContext("2d")
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = "high"
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+
+    const img = canvas.toDataURL("image/png")
+    const image = document.createElement("img")
+    image.src = img
+    strip.appendChild(image)
+
+    flash()
+  }
+
+  capturing = false
+}
+
+function retake(){
+  if(retakeLeft <= 0){
     alert("Kesempatan habis")
     return
   }
 
-  retakeLeft -= 1
+  if(capturing || isUploading) return
+
+  retakeLeft--
   updateRetakeUI()
   startCapture()
 }
 
-function stopSession() {
-  if (isUploading) return
-  if (!confirm("Yakin berhenti?")) return
+function stopSession(){
+  if(!confirm("Yakin berhenti?")) return
   stopSessionForce()
 }
 
-function stopSessionForce() {
-  clearQrResetTimers()
+function stopSessionForce(){
+  clearQrResetTimeout()
   isSessionActive = false
   capturing = false
+  isUploading = false
   counter.innerText = ""
   cancelAnimationFrame(animationFrame)
   resetProgressBar()
   stopCameraStream()
   showScreen("startScreen")
-  toggleActionButtons()
 }
 
-async function renderStripToBlob() {
-  const stripNode = document.getElementById("strip")
-  const exportWrapper = document.createElement("div")
-  const exportStrip = stripNode.cloneNode(true)
+async function wait(ms){
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
 
-  exportWrapper.style.position = "fixed"
-  exportWrapper.style.left = "-99999px"
-  exportWrapper.style.top = "0"
-  exportWrapper.style.padding = "24px"
-  exportWrapper.style.background = "#ffffff"
-  exportWrapper.style.zIndex = "-1"
-
-  exportStrip.style.width = `${EXPORT_WIDTH}px`
-  exportStrip.style.padding = "26px"
-  exportStrip.style.borderRadius = "0"
-  exportStrip.style.boxShadow = "none"
-  exportStrip.style.fontSize = "22px"
-  exportStrip.style.lineHeight = "1.55"
-
-  exportStrip.querySelectorAll("img").forEach(img => {
+async function exportStripToBlob(){
+  const stripWrapper = document.getElementById("strip")
+  const clone = stripWrapper.cloneNode(true)
+  clone.id = "stripExportClone"
+  clone.style.width = `${EXPORT_STRIP_WIDTH}px`
+  clone.style.maxWidth = `${EXPORT_STRIP_WIDTH}px`
+  clone.style.position = "fixed"
+  clone.style.left = "-10000px"
+  clone.style.top = "0"
+  clone.style.opacity = "1"
+  clone.style.pointerEvents = "none"
+  clone.style.boxShadow = "none"
+  clone.style.borderRadius = "0"
+  clone.style.padding = "24px"
+  clone.style.fontSize = "28px"
+  clone.style.lineHeight = "1.35"
+  clone.querySelectorAll("img").forEach((img) => {
     img.style.width = "100%"
     img.style.display = "block"
-    img.style.marginBottom = "10px"
-    img.style.borderRadius = "10px"
     img.style.filter = "none"
+    img.style.marginBottom = "10px"
   })
 
-  exportWrapper.appendChild(exportStrip)
-  document.body.appendChild(exportWrapper)
+  document.body.appendChild(clone)
 
   try {
-    const canvas = await html2canvas(exportStrip, {
+    const canvas = await html2canvas(clone, {
       backgroundColor: "#ffffff",
       scale: EXPORT_SCALE,
       useCORS: true,
@@ -462,134 +399,107 @@ async function renderStripToBlob() {
     })
 
     return await new Promise((resolve, reject) => {
-      canvas.toBlob(blob => {
-        if (!blob) {
-          reject(new Error("Gagal membuat image strip"))
+      canvas.toBlob((blob) => {
+        if(!blob){
+          reject(new Error("Gagal membuat image dari strip"))
           return
         }
         resolve(blob)
-      }, "image/png", 1)
+      }, "image/png")
     })
   } finally {
-    exportWrapper.remove()
+    clone.remove()
   }
 }
 
-function buildFilePath() {
-  const now = new Date()
-  const datePart = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`
-  const randomPart = crypto.randomUUID()
-  return `strips/${datePart}/${randomPart}.png`
-}
+async function uploadStripToSupabase(blob){
+  const filePath = `strips/${Date.now()}-${crypto.randomUUID()}.png`
+  console.log("Uploading to Supabase", { bucket: BUCKET_NAME, filePath, supabaseUrl: SUPABASE_URL })
 
-async function uploadStripBlob(filePath, blob) {
-  const { error } = await supabaseClient
+  const { error: uploadError } = await supabaseClient
     .storage
     .from(BUCKET_NAME)
     .upload(filePath, blob, {
+      cacheControl: "3600",
       contentType: "image/png",
-      upsert: false,
-      cacheControl: "3600"
+      upsert: false
     })
 
-  if (error) {
-    throw error
-  }
-}
+  if(uploadError) throw uploadError
 
-async function createSignedUrlWithRetry(filePath, ttlSeconds) {
-  let lastError = null
-
-  for (let attempt = 1; attempt <= 5; attempt += 1) {
+  for(let attempt = 0; attempt < 4; attempt++){
     const { data, error } = await supabaseClient
       .storage
       .from(BUCKET_NAME)
-      .createSignedUrl(filePath, ttlSeconds, {
-        download: `the-sweets-${Date.now()}.png`
+      .createSignedUrl(filePath, SIGNED_URL_TTL_SECONDS, {
+        download: `${Date.now()}-the-sweets.png`
       })
 
-    if (!error && data?.signedUrl) {
+    if(!error && data?.signedUrl){
       return data.signedUrl
     }
 
-    lastError = error || new Error("Signed URL tidak berhasil dibuat")
-    await wait(350 * attempt)
-  }
+    if(attempt === 3){
+      throw error || new Error("Gagal membuat signed URL")
+    }
 
-  throw lastError
+    await wait(600)
+  }
 }
 
-async function showQrScreen(url) {
-  qrStatus.innerText = "Scan QR untuk download foto"
+async function showQRCode(url){
+  qrStatus.innerText = "Scan QR untuk simpan foto"
   downloadLink.href = url
+  downloadLink.innerText = "Download foto"
 
-  const ctx = qrCanvas.getContext("2d")
-  ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height)
+  const size = 280
+  qrCanvas.width = size
+  qrCanvas.height = size
 
   await QRCode.toCanvas(qrCanvas, url, {
-    width: 280,
-    margin: 1,
+    width: size,
+    margin: 2,
     color: {
-      dark: "#b70d62",
+      dark: "#9c005c",
       light: "#ffffff"
     }
   })
 
   showScreen("qrScreen")
-  scheduleQrReset()
+  clearQrResetTimeout()
+  qrResetTimeout = setTimeout(() => {
+    stopSessionForce()
+  }, 20000)
 }
 
-async function printStrip() {
-  if (isUploading || capturing) return
-
-  if (strip.children.length < MAX_PHOTOS) {
-    alert("Ambil 3 foto dulu ya.")
+async function printStrip(){
+  if(isUploading || capturing) return
+  if(strip.children.length < MAX_PHOTOS){
+    alert("Foto belum lengkap.")
     return
   }
-
-  if (!confirm("Sudah puas?")) return
-
-  const originalLabel = printBtn.innerText
+  if(!confirm("Sudah puas?")) return
 
   try {
     isUploading = true
-    qrStatus.innerText = "Mengupload foto..."
-    printBtn.innerText = "Mengupload..."
-    toggleActionButtons()
-
-    const blob = await renderStripToBlob()
-    const filePath = buildFilePath()
-
-    console.log("Uploading to bucket:", BUCKET_NAME)
-    console.log("Uploading filePath:", filePath)
-
-    await uploadStripBlob(filePath, blob)
-
-    console.log("Upload OK, creating signed URL for:", filePath)
-
-    const signedUrl = await createSignedUrlWithRetry(filePath, SIGNED_URL_TTL_SECONDS)
-
     isSessionActive = false
-    capturing = false
     counter.innerText = ""
-    cancelAnimationFrame(animationFrame)
-    resetProgressBar()
-    stopCameraStream()
+    qrStatus.innerText = "Mengupload foto..."
 
-    await showQrScreen(signedUrl)
+    const blob = await exportStripToBlob()
+    const signedUrl = await uploadStripToSupabase(blob)
+
+    stopCameraStream()
+    await showQRCode(signedUrl)
   } catch (err) {
-    console.error("Supabase upload / signed URL error:", err)
+    console.error("Supabase upload error:", err)
     const message = err?.message || err?.error_description || JSON.stringify(err)
     alert(`Gagal upload foto: ${message}`)
-    qrStatus.innerText = "Upload gagal. Coba lagi."
+    showScreen("cameraScreen")
   } finally {
     isUploading = false
-    printBtn.innerText = originalLabel
-    toggleActionButtons()
   }
 }
 
 updateDateTime()
 setRandomCaption()
-updateRetakeUI()
-toggleActionButtons()
