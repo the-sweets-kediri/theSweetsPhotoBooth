@@ -35,6 +35,8 @@ let currentSessionCode = ""
 let currentDateTime = ""
 let currentCaption1 = ""
 let currentCaption2 = ""
+let qrCloseTimer = null
+
 
 const captions = [
   "Life is sweeter with you",
@@ -83,10 +85,14 @@ function updateDateTime() {
 }
 
 function setRandomCaption() {
-  currentCaption1 = captions[Math.floor(Math.random() * captions.length)]
+ currentCaption1 = captions[Math.floor(Math.random() * captions.length)]
   currentCaption2 = captions2[Math.floor(Math.random() * captions2.length)]
-  randomCaptionEl.innerText = currentCaption1
-  randomCaption2El.innerText = currentCaption2
+
+  const el1 = document.getElementById("randomCaption")
+  const el2 = document.getElementById("randomCaption2")
+
+  if (el1) el1.innerText = currentCaption1
+  if (el2) el2.innerText = currentCaption2
 }
 
 function resetProgressBar() {
@@ -361,6 +367,30 @@ function stopSessionForce() {
   showScreen("startScreen")
 }
 
+function closeQRSession() {
+  if (qrCloseTimer) {
+    clearTimeout(qrCloseTimer)
+    qrCloseTimer = null
+  }
+
+  stopSessionForce()
+
+  if (qrCanvas) {
+    const ctx = qrCanvas.getContext("2d")
+    if (ctx) ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height)
+  }
+
+  if (downloadLink) {
+    downloadLink.removeAttribute("href")
+    downloadLink.innerText = ""
+  }
+
+  if (qrStatus) {
+    qrStatus.innerText = ""
+  }
+}
+
+
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
@@ -409,7 +439,7 @@ async function renderStripBlob() {
     y += gap
   }
 
-  centerText("--------------------------------", 28, "normal", "#666666", 34)
+  
   centerText("THE SWEETS", 58, "bold", "#111111", 62)
   centerText("PHOTOBOOTH RECEIPT", 28, "bold", "#444444", 46)
   centerText("--------------------------------", 28, "normal", "#666666", 44)
@@ -433,7 +463,7 @@ async function renderStripBlob() {
   y = photoY + 20
   centerText("--------------------------------", 28, "normal", "#666666", 46)
   centerText(currentCaption1 || "Sweet moments, sweet memories", 32, "bold", "#111111", 46)
-  centerText(currentCaption2 || "Tag us @thesweets", 28, "normal", "#111111", 42)
+  centerText(currentCaption2 || "Tag us @hellothesweets", 28, "normal", "#111111", 42)
   centerText("Total: GOOD DAY", 28, "normal", "#111111", 42)
   centerText("@thesweets", 28, "normal", "#111111", 42)
   centerText("Thank you for visiting", 28, "normal", "#111111", 42)
@@ -506,9 +536,12 @@ async function showQRCode(url) {
 
   showScreen("qrScreen")
 
-  setTimeout(() => {
-    resetSession()
-    showScreen("startScreen")
+ if (qrCloseTimer) {
+    clearTimeout(qrCloseTimer)
+  }
+
+  qrCloseTimer = setTimeout(() => {
+    closeQRSession()
   }, QR_TIMEOUT_MS)
 }
 
