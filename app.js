@@ -19,7 +19,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 const sessionDuration = 120000
 const photoDelay = 7
 const MAX_PHOTOS = 3
-const QR_TIMEOUT_MS = 25000
+const QR_TIMEOUT_MS = 60000
 const EXPORT_WIDTH = 1200
 const EXPORT_PADDING = 56
 const EXPORT_GAP = 24
@@ -440,13 +440,13 @@ async function renderStripBlob() {
   }
 
   
-  centerText("THE SWEETS", 58, "bold", "#111111", 62)
-  centerText("PHOTO RECEIPT", 28, "bold", "#444444", 46)
-  centerText("--------------------------------", 28, "normal", "#666666", 44)
-  centerText(`Session: ${currentSessionCode}`, 28, "normal", "#111111", 42)
-  centerText(`Date|Time: ${currentDateTime}`, 28, "normal", "#111111", 42)
-  centerText("Item: 3 Photo Strip", 28, "normal", "#111111", 42)
-  centerText("Status: READY TO DOWNLOAD", 28, "normal", "#111111", 52)
+  centerText("THE SWEETS", 72, "bold", "#111111", 72)
+  centerText("PHOTO RECEIPT", 48, "bold", "#444444", 46)
+  centerText("--------------------------------", 48, "normal", "#666666", 54)
+  centerText(`Session: ${currentSessionCode}`, 48, "normal", "#111111", 48)
+  centerText(`Date|Time: ${currentDateTime}`, 48, "normal", "#111111", 48)
+  centerText("Item: 3 Photo Strip", 48, "normal", "#111111", 48)
+  centerText("Status: READY TO DOWNLOAD", 48, "normal", "#111111", 60)
 
   let photoY = y
   const x = EXPORT_PADDING
@@ -461,13 +461,13 @@ async function renderStripBlob() {
   })
 
   y = photoY + 20
-  centerText("--------------------------------", 28, "normal", "#666666", 46)
-  centerText(currentCaption1 || "Sweet moments, sweet memories", 32, "bold", "#111111", 46)
-  centerText(currentCaption2 || "Tag us @hellothesweets", 28, "normal", "#111111", 42)
-  centerText("Total: GOOD DAY", 28, "normal", "#111111", 42)
-  centerText("@thesweets", 28, "normal", "#111111", 42)
-  centerText("Thank you for visiting", 28, "normal", "#111111", 42)
-  centerText("--------------------------------", 28, "normal", "#666666", 34)
+  centerText("--------------------------------", 40, "normal", "#666666", 54)
+  centerText(currentCaption1 || "Sweet moments, sweet memories", 32, "bold", "#111111", 54)
+  centerText(currentCaption2 || "Tag us @hellothesweets", 48, "normal", "#111111", 48)
+  centerText("Total: GOOD DAY", 48, "normal", "#111111", 48)
+  centerText("@thesweets", 48, "normal", "#111111", 48)
+  centerText("Thank you for visiting", 48, "normal", "#111111", 48)
+  centerText("--------------------------------", 48, "normal", "#666666", 48)
 
   return await new Promise((resolve, reject) => {
     canvas.toBlob(blob => {
