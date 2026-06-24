@@ -461,8 +461,8 @@ async function renderStripBlob() {
   })
 
   y = photoY + 20
-  centerText("--------------------------------", 40, "normal", "#666666", 54)
-  centerText(currentCaption1 || "Sweet moments, sweet memories", 32, "bold", "#111111", 54)
+  centerText("--------------------------------", 48, "normal", "#666666", 54)
+  centerText(currentCaption1 || "Sweet moments, sweet memories", 48, "bold", "#111111", 54)
   centerText(currentCaption2 || "Tag us @hellothesweets", 48, "normal", "#111111", 48)
   centerText("Total: GOOD DAY", 48, "normal", "#111111", 48)
   centerText("@thesweets", 48, "normal", "#111111", 48)
