@@ -441,7 +441,7 @@ async function renderStripBlob() {
 
   
   centerText("THE SWEETS", 58, "bold", "#111111", 62)
-  centerText("PHOTOBOOTH RECEIPT", 28, "bold", "#444444", 46)
+  centerText("PHOTO RECEIPT", 28, "bold", "#444444", 46)
   centerText("--------------------------------", 28, "normal", "#666666", 44)
   centerText(`Session: ${currentSessionCode}`, 28, "normal", "#111111", 42)
   centerText(`Date|Time: ${currentDateTime}`, 28, "normal", "#111111", 42)
