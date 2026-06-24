@@ -176,10 +176,10 @@ button:active {
   transform: scale(0.95);
 }
 
-.startBtn { background: #2ecc71; }
-.retakeBtn { background: #f39c12; }
-.printBtn { background: #e74c3c; }
-.stopBtn { background: #b93c62; }
+.startBtn { background: linear-gradient(135deg, #ff3fa1, #d41374); }
+.retakeBtn { background: linear-gradient(135deg, #ff9b45, #ff6f61); }
+.printBtn { background: linear-gradient(135deg, #ff4fb5, #b70d62); }
+.stopBtn, .ghostBtn { background: rgba(255, 255, 255, 0.16); }
 
 #strip {
   width: 220px;
@@ -275,7 +275,7 @@ button:active {
   position: fixed;
   left: 0;
   height: 6px;
-  background: #2ecc71;
+  background: #ff5dad;
   z-index: 9998;
   box-shadow: 0 0 10px currentColor;
 }
@@ -286,7 +286,7 @@ button:active {
   position: fixed;
   top: 0;
   width: 6px;
-  background: #2ecc71;
+  background: #ff5dad;
   z-index: 9998;
   box-shadow: 0 0 10px currentColor;
 }
