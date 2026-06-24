@@ -1,105 +1,104 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Sweet Lab Photobooth</title>
-<link rel="stylesheet" href="style.css?v=6">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Sweets Photobooth</title>
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
-
 <body>
+  <div id="progressTop"></div>
+  <div id="progressRight"></div>
+  <div id="progressBottom"></div>
+  <div id="progressLeft"></div>
 
-<div id="progressTop"></div>
-<div id="progressRight"></div>
-<div id="progressBottom"></div>
-<div id="progressLeft"></div>
-<!-- START -->
-<div id="startScreen" class="screen active">
-  <h2>🍰 The Sweet Lab Photobooth</h2>
+  <div id="startScreen" class="screen active">
+    <div class="brandWrap">
+      <h1 class="brandTitle">The Sweets <span class="heart">♡</span></h1>
+      <p class="brandSub">Photobooth</p>
+    </div>
+    <p class="introText">
+      📸 Ambil 3 foto seru bersama temanmu<br>
+      🔁 Bisa coba lagi maksimal 2x<br>
+      📲 Setelah selesai, scan QR untuk download<br><br>
+      ⏱ Per sesi maksimal 2 menit
+    </p>
+    <button class="startBtn" onclick="goInstruction()">Mulai</button>
+  </div>
 
-  <p>
-    📸 Ambil 3 foto seru bersama temanmu<br>
-    🔁 Bisa coba lagi maksimal 2x<br>
-    🖨 Dapatkan hasil cetak langsung<br><br>
+  <div id="instructionScreen" class="screen">
+    <div class="brandWrap small">
+      <h2 class="brandTitle">The Sweets <span class="heart">♡</span></h2>
+      <p class="brandSub">Photobooth</p>
+    </div>
+    <div class="card instructionCard">
+      <h3>Cara Foto</h3>
+      <p>
+        • Kamera mulai otomatis<br>
+        • Setiap foto ada countdown 7 detik<br>
+        • Total 3 foto per sesi<br>
+        • Bisa Coba Lagi maksimal 2x<br>
+        • Setelah selesai, tekan Cetak untuk dapat QR download<br><br>
+        Siapkan pose terbaikmu ✨
+      </p>
+    </div>
+    <button class="startBtn" onclick="startSession()">Mulai Foto</button>
+  </div>
 
-    💳 Pembayaran via QR / Cash<br><br>
-    
-    Pembelian minimal Rp50.000 GRATIS 1x sesi<br><br>
+  <div id="cameraScreen" class="screen">
+    <div class="brandWrap small topBrand">
+      <h2 class="brandTitle">The Sweets <span class="heart">♡</span></h2>
+      <p class="brandSub">Photobooth</p>
+    </div>
 
-    ⏱ Per sesi maksimal 2 menit
-  </p>
-  <button class="startBtn" onclick="goInstruction()">Mulai</button>
-</div>
+    <div id="main">
+      <div id="cameraBlock">
+        <div id="cameraContainer">
+          <video id="video" autoplay playsinline muted></video>
+          <div id="countdown"></div>
+        </div>
+        <div id="controls">
+          <button class="retakeBtn" onclick="retake()" id="retakeBtn">🔁 Coba Lagi (2)</button>
+          <button class="printBtn" onclick="printStrip()">📲 Cetak</button>
+          <button class="stopBtn" onclick="stopSession()">⛔ Berhenti</button>
+        </div>
+      </div>
 
-<!-- INSTRUCTION -->
-<div id="instructionScreen" class="screen">
-  <h2>📸 Cara Foto</h2>
+      <div id="strip">
+        <div class="receiptHeader">
+          -----------------------------<br><br>
+          <b>THE SWEETS ♡</b><br><br>
+          Date|Time: <span id="datetime"></span><br><br>
+        </div>
+        <div id="photos"></div>
+        <div class="receiptFooter">
+          <br>-----------------------------<br>
+          <b id="randomCaption"></b><br><br>
+          <b id="randomCaption2"></b><br><br>
+          Total: GOOD DAY<br><br>
+          @thesweets<br>
+          -----------------------------
+        </div>
+      </div>
+    </div>
+  </div>
 
-  <p>
-    • Kamera akan mulai otomatis<br>
-    • Setiap foto ada countdown 7 detik<br>
-    • Bersiap saat angka muncul<br><br>
+  <div id="qrScreen" class="screen">
+    <div class="brandWrap small">
+      <h2 class="brandTitle">The Sweets <span class="heart">♡</span></h2>
+      <p class="brandSub">Photobooth</p>
+    </div>
+    <div class="card qrCard">
+      <h3>Scan QR untuk Download</h3>
+      <canvas id="qrCanvas"></canvas>
+      <p id="qrStatus">Menyiapkan link download...</p>
+      <a id="downloadLink" target="_blank" rel="noopener">Buka foto</a>
+    </div>
+  </div>
 
-    • Total 3 foto<br>
-    • Bisa "Coba Lagi" maksimal 2x<br><br>
-
-    • Setelah selesai, tekan "Cetak"<br>
-    • Hasil hanya bisa dicetak 1x<br><br>
-
-    😄 Siapkan pose terbaikmu dan bersenang-senang!<br><br>
-    
-    Sudah Siap? Klik tombol dibawah.
-  </p>
-  <button class="startBtn" onclick="startSession()">Mulai Foto</button>
-</div>
-  
-<!-- CAMERA -->
-<div id="cameraScreen" class="screen">
-
-<h2>📸 The Sweet Lab Photobooth</h2>
-
-<div id="main">
-
-<div id="cameraBlock">
-
-<div id="cameraContainer">
-<video id="video" autoplay playsinline></video>
-<div id="countdown"></div>
-</div>
-
-<div id="controls">
-
-<button class="retakeBtn" onclick="retake()" id="retakeBtn">🔁 Coba Lagi (2)</button>
-<button class="printBtn" onclick="printStrip()">🖨 Cetak</button>
-<button class="stopBtn" onclick="stopSession()">⛔ Berhenti</button>
-</div>
-
-</div>
-
-<div id="strip">
-
-<div class="receiptHeader">
------------------------------<br><br>
-<b>THE SWEET LAB</b><br><br>
-Date|Time: <span id="datetime"></span><br><br>
-</div>
-
-<div id="photos"></div>
-
-<div class="receiptFooter">
-<br>-----------------------------<br>
-<b id="randomCaption"></b><br><br>
-<b id="randomCaption2"></b><br><br>
-Total: GOOD DAY<br><br>
-@thesweetlab<br>
------------------------------
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<script src="app.js?v=6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>
