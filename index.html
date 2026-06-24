@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Sweet Lab Photobooth</title>
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 
 <body>
@@ -14,7 +14,7 @@
 <div id="progressLeft"></div>
 <!-- START -->
 <div id="startScreen" class="screen active">
-  <img class="brandLogo" src="logo.png" alt="The Sweets logo">
+  <img class="brandLogo heroLogo" src="logo-stroked.png?v=1" alt="The Sweets logo">
 
   <p>
     📸 Ambil 3 foto seru bersama temanmu<br>
@@ -32,7 +32,10 @@
 
 <!-- INSTRUCTION -->
 <div id="instructionScreen" class="screen">
-  <img class="brandLogo instructionLogo" src="logo.png" alt="The Sweets logo">
+  <div class="screenHeader">
+  <img class="brandLogo" src="logo-stroked.png?v=1" alt="The Sweets logo">
+  <h2 class="screenTitle">📸 Cara Foto</h2>
+</div>
 
   <p>
     • Kamera akan mulai otomatis<br>
@@ -55,7 +58,10 @@
 <!-- CAMERA -->
 <div id="cameraScreen" class="screen">
 
-<img class="brandLogo cameraLogo" src="logo.png" alt="The Sweets logo">
+<div class="screenHeader compact">
+  <img class="brandLogo cameraLogo" src="logo-stroked.png?v=1" alt="The Sweets logo">
+  <h2 class="screenTitle">📸 Photobooth</h2>
+</div>
 
 <div id="main">
 
@@ -78,9 +84,8 @@
 <div id="strip">
 
 <div class="receiptHeader">
-<img class="receiptLogo" src="logo.png" alt="The Sweets logo"><br>
 -----------------------------<br><br>
-<b>THE SWEET LAB</b><br><br>
+<img class="stripLogo" src="logo-stroked.png?v=1" alt="The Sweets logo"><br>
 Date|Time: <span id="datetime"></span><br><br>
 </div>
 

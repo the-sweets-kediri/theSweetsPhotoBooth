@@ -1,55 +1,68 @@
 html, body{
 margin:0;
+padding:0;
+min-height:100%;
 font-family:'Comic Sans MS',sans-serif;
-background:linear-gradient(135deg,#ffb7d5 0%, #ff8fc4 35%, #ff6fb5 65%, #ff9ad5 100%);
-background-size:400% 400%;
+background:linear-gradient(135deg,#ffb0d9 0%,#ff78bf 35%,#ff4fa3 68%,#ff8ec7 100%);
+background-size:300% 300%;
 animation:bgmove 14s ease-in-out infinite alternate;
-color:#fff8fc;
+color:white;
 text-align:center;
+overflow:hidden;
+}
+
+body{
+position:relative;
+isolation:isolate;
+}
+
+body::before,
+body::after{
+content:"";
+position:fixed;
+inset:auto;
+width:42vmax;
+height:42vmax;
+border-radius:50%;
+pointer-events:none;
+filter:blur(60px);
+opacity:0.55;
+z-index:-1;
+mix-blend-mode:screen;
+}
+
+body::before{
+left:-10vmax;
+top:-8vmax;
+background:radial-gradient(circle at 30% 30%, rgba(255,255,255,0.38) 0%, rgba(255,102,178,0.34) 24%, rgba(255,54,148,0.68) 52%, rgba(214,0,110,0.72) 100%);
+animation:blobFloatA 17s ease-in-out infinite;
+}
+
+body::after{
+right:-12vmax;
+bottom:-10vmax;
+background:radial-gradient(circle at 40% 40%, rgba(255,210,232,0.30) 0%, rgba(255,92,177,0.42) 22%, rgba(244,22,134,0.74) 55%, rgba(176,0,90,0.78) 100%);
+animation:blobFloatB 19s ease-in-out infinite;
 }
 
 @keyframes bgmove{
 0%{background-position:0% 50%;}
-100%{background-position:100% 50%;}
+50%{background-position:100% 50%;}
+100%{background-position:20% 80%;}
 }
 
-body{
-min-height:100vh;
-overflow:hidden;
+@keyframes blobFloatA{
+0%{transform:translate3d(0,0,0) scale(1);}
+35%{transform:translate3d(10vmax,6vmax,0) scale(1.12);}
+70%{transform:translate3d(4vmax,14vmax,0) scale(0.94);}
+100%{transform:translate3d(0,0,0) scale(1);}
 }
 
-.brandLogo{
-width:min(520px, 82vw);
-height:auto;
-display:block;
-margin:0 auto 18px;
-filter:drop-shadow(0 10px 28px rgba(120, 28, 76, 0.28));
-}
-
-.instructionLogo{
-width:min(460px, 76vw);
-margin-bottom:12px;
-}
-
-.cameraLogo{
-width:min(360px, 46vw);
-margin-bottom:16px;
-}
-
-.receiptLogo{
-width:100%;
-max-width:140px;
-height:auto;
-margin:0 auto 10px;
-display:block;
-}
-
-#startScreen p,
-#instructionScreen p{
-max-width:700px;
-margin:0 auto;
-line-height:1.7;
-text-shadow:0 2px 12px rgba(120, 28, 76, 0.18);
+@keyframes blobFloatB{
+0%{transform:translate3d(0,0,0) scale(1);}
+30%{transform:translate3d(-8vmax,-6vmax,0) scale(1.08);}
+65%{transform:translate3d(-14vmax,-1vmax,0) scale(0.92);}
+100%{transform:translate3d(0,0,0) scale(1);}
 }
 
 .startBtn{background:#2ecc71;}
@@ -162,7 +175,7 @@ left:50%;
 transform:translate(-50%,-50%);
 font-size:120px;
 font-weight:bold;
-color:#fff8fc;
+color:white;
 text-shadow:4px 4px 15px black;
 pointer-events:none;
 }
@@ -181,7 +194,7 @@ font-size:16px;
 font-weight:bold;
 border-radius:40px;
 cursor:pointer;
-color:#fff8fc;
+color:white;
 transition:0.25s;
 box-shadow:0 5px 12px rgba(0,0,0,0.25);
 }
