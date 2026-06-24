@@ -1,23 +1,28 @@
 const SUPABASE_URL = "https://ayalafmqetfunliexrng.supabase.co"
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5YWxhZm1xZXRmdW5saWV4cm5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDM3MjMsImV4cCI6MjA5NzgxOTcyM30.hbBHLllj5eJLFSkK-CIb32Zxu1a4oitTPqZ-81fMg-U"
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdWIiOiJheWFsYWZtcWV0ZnVubGlleHJuZyIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzgyMjQzNzIzLCJleHAiOjIwOTc4MTk3MjN9.hbBHLllj5eJLFSkK-CIb32Zxu1a4oitTPqZ-81fMg-U"
 const BUCKET_NAME = "Photobooth"
-const SIGNED_URL_TTL_SECONDS = 60 * 10
-const EXPORT_STRIP_WIDTH = 720
-const EXPORT_SCALE = 3
-
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 const video = document.getElementById("video")
-const strip = document.getElementById("photos")
+const photosContainer = document.getElementById("photos")
 const counter = document.getElementById("countdown")
 const retakeBtn = document.getElementById("retakeBtn")
+const sessionCodeEl = document.getElementById("sessionCode")
+const dateTimeEl = document.getElementById("datetime")
+const randomCaptionEl = document.getElementById("randomCaption")
+const randomCaption2El = document.getElementById("randomCaption2")
 const qrCanvas = document.getElementById("qrCanvas")
 const qrStatus = document.getElementById("qrStatus")
 const downloadLink = document.getElementById("downloadLink")
 
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
 const sessionDuration = 120000
 const photoDelay = 7
 const MAX_PHOTOS = 3
+const QR_TIMEOUT_MS = 25000
+const EXPORT_WIDTH = 1200
+const EXPORT_PADDING = 56
+const EXPORT_GAP = 24
 
 let retakeLeft = 2
 let sessionStartTime = null
@@ -25,19 +30,23 @@ let animationFrame = null
 let capturing = false
 let isSessionActive = false
 let isUploading = false
-let qrResetTimeout = null
+let capturedPhotos = []
+let currentSessionCode = ""
+let currentDateTime = ""
+let currentCaption1 = ""
+let currentCaption2 = ""
 
 const captions = [
-  "Life is sweeter with you 🍰",
+  "Life is sweeter with you",
   "Sweet moments, sweet memories",
   "Happiness is homemade",
-  "Bite, smile, repeat 😄",
-  "Sugar rush incoming!",
+  "Bite, smile, repeat",
+  "Sugar rush incoming",
   "Dessert first, always",
-  "Good vibes only ✨",
-  "Made with love 💕",
-  "Stay sweet!",
-  "You look amazing today!"
+  "Good vibes only",
+  "Made with love",
+  "Stay sweet",
+  "You look amazing today"
 ]
 
 const captions2 = [
@@ -47,20 +56,21 @@ const captions2 = [
   "Sweet memories start here"
 ]
 
-function goInstruction(){
-  clearQrResetTimeout()
-  showScreen("instructionScreen")
+function generateSessionCode() {
+  const seed = Date.now().toString().slice(-6)
+  return `TS-${seed}`
 }
 
-function showScreen(id){
-  document.querySelectorAll(".screen").forEach((screen) => screen.classList.remove("active"))
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"))
   document.getElementById(id).classList.add("active")
 }
 
-function updateDateTime(){
-  const el = document.getElementById("datetime")
-  if(!el) return
+function goInstruction() {
+  showScreen("instructionScreen")
+}
 
+function updateDateTime() {
   const now = new Date()
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
   const day = now.getDate()
@@ -68,81 +78,25 @@ function updateDateTime(){
   const year = now.getFullYear()
   const hours = now.getHours().toString().padStart(2, "0")
   const mins = now.getMinutes().toString().padStart(2, "0")
-
-  el.innerText = `${day} ${month} ${year} | ${hours}:${mins}`
+  currentDateTime = `${day} ${month} ${year} | ${hours}:${mins}`
+  dateTimeEl.innerText = currentDateTime
 }
 
-function setRandomCaption(){
-  const random = captions[Math.floor(Math.random() * captions.length)]
-  const random2 = captions2[Math.floor(Math.random() * captions2.length)]
-  const el1 = document.getElementById("randomCaption")
-  const el2 = document.getElementById("randomCaption2")
-
-  if(el1) el1.innerText = random
-  if(el2) el2.innerText = random2
+function setRandomCaption() {
+  currentCaption1 = captions[Math.floor(Math.random() * captions.length)]
+  currentCaption2 = captions2[Math.floor(Math.random() * captions2.length)]
+  randomCaptionEl.innerText = currentCaption1
+  randomCaption2El.innerText = currentCaption2
 }
 
-function updateRetakeUI(){
-  retakeBtn.innerText = `🔁 Coba Lagi (${retakeLeft})`
-}
-
-function resetProgressBar(){
+function resetProgressBar() {
   document.getElementById("progressTop").style.width = "0%"
   document.getElementById("progressRight").style.height = "0%"
   document.getElementById("progressBottom").style.width = "0%"
   document.getElementById("progressLeft").style.height = "0%"
 }
 
-function clearQrResetTimeout(){
-  if(qrResetTimeout){
-    clearTimeout(qrResetTimeout)
-    qrResetTimeout = null
-  }
-}
-
-function stopCameraStream(){
-  const stream = video.srcObject
-  if(!stream) return
-  stream.getTracks().forEach((track) => track.stop())
-  video.srcObject = null
-}
-
-function resetSession(){
-  retakeLeft = 2
-  updateRetakeUI()
-  strip.innerHTML = ""
-  counter.innerText = ""
-  isSessionActive = false
-  capturing = false
-  isUploading = false
-  updateDateTime()
-  setRandomCaption()
-}
-
-function startSessionTimer(){
-  cancelAnimationFrame(animationFrame)
-  sessionStartTime = Date.now()
-  runTimer()
-}
-
-function runTimer(){
-  const now = Date.now()
-  const elapsed = now - sessionStartTime
-  const remaining = sessionDuration - elapsed
-
-  updateProgressSmooth(elapsed)
-
-  if(remaining <= 0){
-    cancelAnimationFrame(animationFrame)
-    alert("Waktu habis")
-    stopSessionForce()
-    return
-  }
-
-  animationFrame = requestAnimationFrame(runTimer)
-}
-
-function updateProgressSmooth(elapsed){
+function updateProgressSmooth(elapsed) {
   const percent = Math.min(1, elapsed / sessionDuration) * 100
   const top = document.getElementById("progressTop")
   const right = document.getElementById("progressRight")
@@ -154,29 +108,29 @@ function updateProgressSmooth(elapsed){
   bottom.style.width = "0%"
   left.style.height = "0%"
 
-  if(percent <= 25){
+  if (percent <= 25) {
     top.style.width = (percent / 25) * 100 + "%"
-  }else if(percent <= 50){
+  } else if (percent <= 50) {
     top.style.width = "100%"
     right.style.height = ((percent - 25) / 25) * 100 + "%"
-  }else if(percent <= 75){
+  } else if (percent <= 75) {
     top.style.width = "100%"
     right.style.height = "100%"
     bottom.style.width = ((percent - 50) / 25) * 100 + "%"
-  }else{
+  } else {
     top.style.width = "100%"
     right.style.height = "100%"
     bottom.style.width = "100%"
     left.style.height = ((percent - 75) / 25) * 100 + "%"
   }
 
-  if(percent > 90){
-    const blink = Math.sin(Date.now() / 100) > 0 ? 1 : 0.3
-    top.style.opacity = blink
-    right.style.opacity = blink
-    bottom.style.opacity = blink
-    left.style.opacity = blink
-  }else{
+  if (percent > 90) {
+    const pulse = Math.sin(Date.now() / 100) > 0 ? 1 : 0.3
+    top.style.opacity = pulse
+    right.style.opacity = pulse
+    bottom.style.opacity = pulse
+    left.style.opacity = pulse
+  } else {
     top.style.opacity = 1
     right.style.opacity = 1
     bottom.style.opacity = 1
@@ -194,32 +148,60 @@ function updateProgressSmooth(elapsed){
   left.style.background = color
 }
 
-async function startSession(){
-  clearQrResetTimeout()
-  showScreen("cameraScreen")
-  resetSession()
+function startSessionTimer() {
+  cancelAnimationFrame(animationFrame)
+  sessionStartTime = Date.now()
+  runTimer()
+}
 
-  try {
-    await startCamera()
-  } catch (err) {
-    console.error("Camera start failed:", err)
-    alert("Kamera gagal dibuka. Pastikan izin kamera diizinkan dan halaman dibuka via HTTPS / localhost.")
-    showScreen("instructionScreen")
+function runTimer() {
+  const now = Date.now()
+  const elapsed = now - sessionStartTime
+  const remaining = sessionDuration - elapsed
+
+  updateProgressSmooth(elapsed)
+
+  if (remaining <= 0) {
+    cancelAnimationFrame(animationFrame)
+    alert("Waktu habis")
+    stopSessionForce()
     return
   }
 
-  startSessionTimer()
-  startCapture()
+  animationFrame = requestAnimationFrame(runTimer)
 }
 
-async function startCamera(){
+function updateRetakeUI() {
+  retakeBtn.innerText = `🔁 Coba Lagi (${retakeLeft})`
+}
+
+function resetSession() {
+  retakeLeft = 2
+  updateRetakeUI()
+  photosContainer.innerHTML = ""
+  capturedPhotos = []
+  capturing = false
+  isSessionActive = false
+  counter.innerText = ""
+  currentSessionCode = generateSessionCode()
+  sessionCodeEl.innerText = currentSessionCode
+  updateDateTime()
+  setRandomCaption()
+}
+
+function stopCameraStream() {
+  const stream = video.srcObject
+  if (!stream) return
+  stream.getTracks().forEach(track => track.stop())
+  video.srcObject = null
+}
+
+async function startCamera() {
   const existingStream = video.srcObject
-  if(existingStream){
-    const hasLiveTrack = existingStream.getVideoTracks().some((track) => track.readyState === "live")
-    if(hasLiveTrack){
-      if(video.readyState >= 2){
-        await video.play()
-      }
+  if (existingStream) {
+    const hasLiveTrack = existingStream.getVideoTracks().some(track => track.readyState === "live")
+    if (hasLiveTrack) {
+      if (video.readyState >= 2) await video.play()
       return
     }
   }
@@ -227,9 +209,8 @@ async function startCamera(){
   const stream = await navigator.mediaDevices.getUserMedia({
     video: {
       facingMode: "user",
-      width: { ideal: 3840 },
-      height: { ideal: 2160 },
-      frameRate: { ideal: 30, max: 30 }
+      width: { ideal: 2560 },
+      height: { ideal: 1440 }
     },
     audio: false
   })
@@ -247,7 +228,7 @@ async function startCamera(){
       }
     }
 
-    if(video.readyState >= 1 && video.videoWidth && video.videoHeight){
+    if (video.readyState >= 1 && video.videoWidth && video.videoHeight) {
       onReady()
       return
     }
@@ -256,23 +237,38 @@ async function startCamera(){
   })
 }
 
-async function countdown(sec){
-  return new Promise((resolve) => {
+async function startSession() {
+  showScreen("cameraScreen")
+  resetSession()
+  updateRetakeUI()
+
+  try {
+    await startCamera()
+  } catch (err) {
+    console.error("Camera start failed:", err)
+    alert("Kamera gagal dibuka. Pastikan izin kamera diizinkan dan halaman dibuka via HTTPS / localhost.")
+    showScreen("instructionScreen")
+    return
+  }
+
+  startSessionTimer()
+  startCapture()
+}
+
+function countdown(sec) {
+  return new Promise(resolve => {
     let i = sec
     counter.innerText = i
-
     const timer = setInterval(() => {
-      if(!isSessionActive){
+      if (!isSessionActive) {
         clearInterval(timer)
         counter.innerText = ""
         resolve()
         return
       }
-
       i--
       counter.innerText = i > 0 ? i : ""
-
-      if(i <= 0){
+      if (i <= 0) {
         clearInterval(timer)
         resolve()
       }
@@ -280,7 +276,7 @@ async function countdown(sec){
   })
 }
 
-function flash(){
+function flash() {
   const f = document.createElement("div")
   f.style.position = "fixed"
   f.style.top = 0
@@ -293,67 +289,71 @@ function flash(){
   setTimeout(() => f.remove(), 120)
 }
 
-async function startCapture(){
-  if(capturing) return
-  if(!video.videoWidth || !video.videoHeight){
+function appendPhotoToPreview(src) {
+  const image = document.createElement("img")
+  image.src = src
+  photosContainer.appendChild(image)
+}
+
+async function captureSinglePhoto() {
+  const width = video.videoWidth || 1920
+  const height = video.videoHeight || 1080
+  const canvas = document.createElement("canvas")
+  canvas.width = width
+  canvas.height = height
+
+  const ctx = canvas.getContext("2d")
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = "high"
+  ctx.drawImage(video, 0, 0, width, height)
+
+  return canvas.toDataURL("image/png")
+}
+
+async function startCapture() {
+  if (capturing) return
+  if (!video.videoWidth || !video.videoHeight) {
     alert("Kamera belum siap. Coba mulai lagi.")
     return
   }
 
   capturing = true
   isSessionActive = true
+  photosContainer.innerHTML = ""
+  capturedPhotos = []
   setRandomCaption()
-  strip.innerHTML = ""
 
-  for(let i = 0; i < MAX_PHOTOS; i++){
-    if(!isSessionActive) break
-
+  for (let i = 0; i < MAX_PHOTOS; i++) {
+    if (!isSessionActive) break
     await countdown(photoDelay)
-    if(!isSessionActive) break
-
-    const canvas = document.createElement("canvas")
-    canvas.width = video.videoWidth || 1920
-    canvas.height = video.videoHeight || 1080
-
-    const ctx = canvas.getContext("2d")
-    ctx.imageSmoothingEnabled = true
-    ctx.imageSmoothingQuality = "high"
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-
-    const img = canvas.toDataURL("image/png")
-    const image = document.createElement("img")
-    image.src = img
-    strip.appendChild(image)
-
+    if (!isSessionActive) break
+    const imgSrc = await captureSinglePhoto()
+    capturedPhotos.push(imgSrc)
+    appendPhotoToPreview(imgSrc)
     flash()
   }
 
   capturing = false
 }
 
-function retake(){
-  if(retakeLeft <= 0){
+function retake() {
+  if (retakeLeft <= 0) {
     alert("Kesempatan habis")
     return
   }
-
-  if(capturing || isUploading) return
-
   retakeLeft--
   updateRetakeUI()
   startCapture()
 }
 
-function stopSession(){
-  if(!confirm("Yakin berhenti?")) return
+function stopSession() {
+  if (!confirm("Yakin berhenti?")) return
   stopSessionForce()
 }
 
-function stopSessionForce(){
-  clearQrResetTimeout()
+function stopSessionForce() {
   isSessionActive = false
   capturing = false
-  isUploading = false
   counter.innerText = ""
   cancelAnimationFrame(animationFrame)
   resetProgressBar()
@@ -361,145 +361,176 @@ function stopSessionForce(){
   showScreen("startScreen")
 }
 
-async function wait(ms){
-  return new Promise((resolve) => setTimeout(resolve, ms))
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-async function exportStripToBlob(){
-  const stripWrapper = document.getElementById("strip")
-  const clone = stripWrapper.cloneNode(true)
-  clone.id = "stripExportClone"
-  clone.style.width = `${EXPORT_STRIP_WIDTH}px`
-  clone.style.maxWidth = `${EXPORT_STRIP_WIDTH}px`
-  clone.style.position = "fixed"
-  clone.style.left = "-10000px"
-  clone.style.top = "0"
-  clone.style.opacity = "1"
-  clone.style.pointerEvents = "none"
-  clone.style.boxShadow = "none"
-  clone.style.borderRadius = "0"
-  clone.style.padding = "24px"
-  clone.style.fontSize = "28px"
-  clone.style.lineHeight = "1.35"
-  clone.querySelectorAll("img").forEach((img) => {
-    img.style.width = "100%"
-    img.style.display = "block"
-    img.style.filter = "none"
-    img.style.marginBottom = "10px"
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = reject
+    img.src = src
+  })
+}
+
+async function renderStripBlob() {
+  if (capturedPhotos.length === 0) {
+    throw new Error("Belum ada foto untuk disimpan")
+  }
+
+  const images = await Promise.all(capturedPhotos.map(loadImage))
+  const photoWidth = EXPORT_WIDTH - (EXPORT_PADDING * 2)
+  const photoHeights = images.map(img => Math.round(photoWidth * (img.height / img.width)))
+
+  const headerHeight = 360
+  const footerHeight = 280
+  const photosHeight = photoHeights.reduce((sum, h) => sum + h, 0) + ((images.length - 1) * EXPORT_GAP)
+  const canvasHeight = EXPORT_PADDING + headerHeight + photosHeight + footerHeight + EXPORT_PADDING
+
+  const canvas = document.createElement("canvas")
+  canvas.width = EXPORT_WIDTH
+  canvas.height = canvasHeight
+  const ctx = canvas.getContext("2d")
+
+  ctx.fillStyle = "#ffffff"
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.fillStyle = "#111111"
+  ctx.textAlign = "center"
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = "high"
+
+  let y = EXPORT_PADDING + 20
+
+  function centerText(text, size, weight = "normal", color = "#111111", gap = 16) {
+    ctx.font = `${weight} ${size}px Courier New`
+    ctx.fillStyle = color
+    ctx.fillText(text, EXPORT_WIDTH / 2, y)
+    y += gap
+  }
+
+  centerText("--------------------------------", 28, "normal", "#666666", 34)
+  centerText("THE SWEETS", 58, "bold", "#111111", 62)
+  centerText("PHOTOBOOTH RECEIPT", 28, "bold", "#444444", 46)
+  centerText("--------------------------------", 28, "normal", "#666666", 44)
+  centerText(`Session: ${currentSessionCode}`, 28, "normal", "#111111", 42)
+  centerText(`Date|Time: ${currentDateTime}`, 28, "normal", "#111111", 42)
+  centerText("Item: 3 Photo Strip", 28, "normal", "#111111", 42)
+  centerText("Status: READY TO DOWNLOAD", 28, "normal", "#111111", 52)
+
+  let photoY = y
+  const x = EXPORT_PADDING
+
+  images.forEach((img, index) => {
+    const h = photoHeights[index]
+    ctx.drawImage(img, x, photoY, photoWidth, h)
+    ctx.strokeStyle = "#ececec"
+    ctx.lineWidth = 2
+    ctx.strokeRect(x, photoY, photoWidth, h)
+    photoY += h + EXPORT_GAP
   })
 
-  document.body.appendChild(clone)
+  y = photoY + 20
+  centerText("--------------------------------", 28, "normal", "#666666", 46)
+  centerText(currentCaption1 || "Sweet moments, sweet memories", 32, "bold", "#111111", 46)
+  centerText(currentCaption2 || "Tag us @thesweets", 28, "normal", "#111111", 42)
+  centerText("Total: GOOD DAY", 28, "normal", "#111111", 42)
+  centerText("@thesweets", 28, "normal", "#111111", 42)
+  centerText("Thank you for visiting", 28, "normal", "#111111", 42)
+  centerText("--------------------------------", 28, "normal", "#666666", 34)
 
-  try {
-    const canvas = await html2canvas(clone, {
-      backgroundColor: "#ffffff",
-      scale: EXPORT_SCALE,
-      useCORS: true,
-      logging: false
-    })
-
-    return await new Promise((resolve, reject) => {
-      canvas.toBlob((blob) => {
-        if(!blob){
-          reject(new Error("Gagal membuat image dari strip"))
-          return
-        }
-        resolve(blob)
-      }, "image/png")
-    })
-  } finally {
-    clone.remove()
-  }
+  return await new Promise((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (!blob) {
+        reject(new Error("Gagal membuat image strip"))
+        return
+      }
+      resolve(blob)
+    }, "image/png")
+  })
 }
 
-async function uploadStripToSupabase(blob){
-  const filePath = `strips/${Date.now()}-${crypto.randomUUID()}.png`
-  console.log("Uploading to Supabase", { bucket: BUCKET_NAME, filePath, supabaseUrl: SUPABASE_URL })
+async function createSignedUrlWithRetry(filePath, attempts = 5) {
+  let lastError = null
+
+  for (let i = 0; i < attempts; i++) {
+    const { data, error } = await supabaseClient
+      .storage
+      .from(BUCKET_NAME)
+      .createSignedUrl(filePath, 60 * 30)
+
+    if (!error && data?.signedUrl) {
+      return data.signedUrl
+    }
+
+    lastError = error
+    await sleep(500 * (i + 1))
+  }
+
+  throw lastError || new Error("Gagal membuat signed URL")
+}
+
+async function uploadStripToSupabase(blob) {
+  const filePath = `strips/${new Date().toISOString().slice(0, 10)}/${currentSessionCode}-${Date.now()}.png`
 
   const { error: uploadError } = await supabaseClient
     .storage
     .from(BUCKET_NAME)
     .upload(filePath, blob, {
-      cacheControl: "3600",
       contentType: "image/png",
       upsert: false
     })
 
-  if(uploadError) throw uploadError
-
-  for(let attempt = 0; attempt < 4; attempt++){
-    const { data, error } = await supabaseClient
-      .storage
-      .from(BUCKET_NAME)
-      .createSignedUrl(filePath, SIGNED_URL_TTL_SECONDS, {
-        download: `${Date.now()}-the-sweets.png`
-      })
-
-    if(!error && data?.signedUrl){
-      return data.signedUrl
-    }
-
-    if(attempt === 3){
-      throw error || new Error("Gagal membuat signed URL")
-    }
-
-    await wait(600)
+  if (uploadError) {
+    throw uploadError
   }
+
+  return await createSignedUrlWithRetry(filePath)
 }
 
-async function showQRCode(url){
-  qrStatus.innerText = "Scan QR untuk simpan foto"
+async function showQRCode(url) {
+  qrStatus.innerText = "Scan QR untuk download foto"
   downloadLink.href = url
-  downloadLink.innerText = "Download foto"
-
-  const size = 280
-  qrCanvas.width = size
-  qrCanvas.height = size
+  downloadLink.innerText = "Buka foto"
+  qrCanvas.width = 280
+  qrCanvas.height = 280
 
   await QRCode.toCanvas(qrCanvas, url, {
-    width: size,
+    width: 280,
     margin: 2,
     color: {
-      dark: "#9c005c",
+      dark: "#111111",
       light: "#ffffff"
     }
   })
 
   showScreen("qrScreen")
-  clearQrResetTimeout()
-  qrResetTimeout = setTimeout(() => {
-    stopSessionForce()
-  }, 20000)
+
+  setTimeout(() => {
+    resetSession()
+    showScreen("startScreen")
+  }, QR_TIMEOUT_MS)
 }
 
-async function printStrip(){
-  if(isUploading || capturing) return
-  if(strip.children.length < MAX_PHOTOS){
-    alert("Foto belum lengkap.")
+async function printStrip() {
+  if (isUploading) return
+  if (capturedPhotos.length !== MAX_PHOTOS) {
+    alert("Tunggu sampai 3 foto selesai diambil dulu ya.")
     return
   }
-  if(!confirm("Sudah puas?")) return
+  if (!confirm("Sudah puas?")) return
 
   try {
     isUploading = true
-    isSessionActive = false
-    counter.innerText = ""
-    qrStatus.innerText = "Mengupload foto..."
-
-    const blob = await exportStripToBlob()
+    qrStatus.innerText = "Menyiapkan QR..."
+    const blob = await renderStripBlob()
     const signedUrl = await uploadStripToSupabase(blob)
-
     stopCameraStream()
     await showQRCode(signedUrl)
   } catch (err) {
     console.error("Supabase upload error:", err)
-    const message = err?.message || err?.error_description || JSON.stringify(err)
-    alert(`Gagal upload foto: ${message}`)
-    showScreen("cameraScreen")
+    alert("Gagal upload foto: " + (err?.message || JSON.stringify(err)))
   } finally {
     isUploading = false
   }
 }
-
-updateDateTime()
-setRandomCaption()
