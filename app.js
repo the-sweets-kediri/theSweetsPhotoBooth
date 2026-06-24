@@ -1,5 +1,5 @@
 const SUPABASE_URL = "https://ayalafmqetfunliexrng.supabase.co"
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdWIiOiJheWFsYWZtcWV0ZnVubGlleHJuZyIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzgyMjQzNzIzLCJleHAiOjIwOTc4MTk3MjN9.hbBHLllj5eJLFSkK-CIb32Zxu1a4oitTPqZ-81fMg-U"
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5YWxhZm1xZXRmdW5saWV4cm5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDM3MjMsImV4cCI6MjA5NzgxOTcyM30.hbBHLllj5eJLFSkK-CIb32Zxu1a4oitTPqZ-81fMg-U"
 const BUCKET_NAME = "Photobooth"
 
 const video = document.getElementById("video")
