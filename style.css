@@ -13,68 +13,6 @@ text-align:center;
 100%{background-position:100% 50%;}
 }
 
-
-.brandTitle,
-.brandMini{
-position:relative;
-display:inline-block;
-margin:0;
-font-family:'Comic Sans MS', 'Trebuchet MS', cursive, sans-serif;
-font-weight:800;
-letter-spacing:0.03em;
-line-height:1;
-}
-
-.brandTitle{
-font-size:48px;
-margin-bottom:6px;
-}
-
-.brandMini{
-font-size:34px;
-margin-bottom:10px;
-}
-
-.brandTitle span,
-.brandMini span{
-position:relative;
-z-index:1;
-color:#fff;
-text-shadow:
-0 2px 0 rgba(255,255,255,0.18),
-0 6px 18px rgba(204, 32, 108, 0.38),
-0 2px 10px rgba(0,0,0,0.18);
-}
-
-.brandTitle::after,
-.brandMini::after{
-content:'❤';
-position:absolute;
-right:-0.08em;
-top:-0.18em;
-font-size:0.95em;
-color:rgba(255, 160, 205, 0.88);
-text-shadow:0 0 18px rgba(255, 94, 162, 0.55);
-transform:rotate(12deg);
-z-index:0;
-pointer-events:none;
-}
-
-.brandSubtitle{
-margin:0 0 14px;
-font-size:22px;
-font-weight:700;
-letter-spacing:0.08em;
-text-transform:uppercase;
-color:#fff7fb;
-text-shadow:0 4px 14px rgba(0,0,0,0.18);
-}
-
-.receiptBrand{
-font-size:12px;
-letter-spacing:0.04em;
-}
-
 .startBtn{background:#2ecc71;}
 .retakeBtn{background:#f39c12;}
 .printBtn{background:#3498db;}
@@ -173,7 +111,7 @@ box-shadow:0 6px 18px rgba(0,0,0,0.25);
 video{
 width:760px;
 border-radius:12px;
-filter:grayscale(100%);
+filter:none;
 }
 
 /* COUNTDOWN (PENTING - DIPERTAHANKAN) */
@@ -234,7 +172,7 @@ text-align:center;
 #photos img{
 width:100%;
 margin-bottom:2px;
-filter:grayscale(100%);
+filter:none;
 }
 
 .receiptHeader{
