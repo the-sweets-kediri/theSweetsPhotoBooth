@@ -551,7 +551,7 @@ async function printStrip() {
     alert("Tunggu sampai 3 foto selesai diambil dulu ya.")
     return
   }
-  if (!confirm("Sudah puas?")) return
+  if (!confirm("Sudah puas dengan foto kamu?")) return
 
   try {
     isUploading = true
