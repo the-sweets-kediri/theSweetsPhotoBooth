@@ -12,7 +12,7 @@ body {
   background:
     radial-gradient(circle at 18% 20%, rgba(255, 182, 216, 0.45), transparent 32%),
     radial-gradient(circle at 84% 18%, rgba(255, 118, 196, 0.30), transparent 28%),
-    linear-gradient(135deg, #ffb7da 0%, #ff8fc8 35%, #ff6fb5 68%, #ff5aa9 100%);
+    linear-gradient(135deg, #ff5dad 0%, #ff5dad 35%, #ff5dad 68%, #ff5dad 100%);
   background-size: 180% 180%;
   animation: bgmove 14s ease-in-out infinite alternate;
 }
