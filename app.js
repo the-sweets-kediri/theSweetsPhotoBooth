@@ -414,7 +414,7 @@ async function renderStripBlob() {
   const photoHeights = images.map(img => Math.round(photoWidth * (img.height / img.width)))
 
   const headerHeight = 360
-  const footerHeight = 280
+  const footerHeight = 360
   const photosHeight = photoHeights.reduce((sum, h) => sum + h, 0) + ((images.length - 1) * EXPORT_GAP)
   const canvasHeight = EXPORT_PADDING + headerHeight + photosHeight + footerHeight + EXPORT_PADDING
 
