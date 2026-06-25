@@ -52,7 +52,7 @@ const captions = [
 ]
 
 const captions2 = [
-  "Tag us @thesweets",
+  "Tag us @hellothesweets",
   "See you again!",
   "Bring your friends next time",
   "Sweet memories start here"
@@ -465,7 +465,7 @@ async function renderStripBlob() {
   centerText(currentCaption1 || "Sweet moments, sweet memories", 48, "normal", "#111111", 54)
   centerText(currentCaption2 || "Tag us @hellothesweets", 48, "normal", "#111111", 48)
   centerText("Total: GOOD DAY", 48, "normal", "#111111", 48)
-  centerText("@thesweets", 48, "normal", "#111111", 48)
+  centerText("@hellothesweets", 48, "normal", "#111111", 48)
   centerText("Thank you for visiting", 48, "normal", "#111111", 48)
   centerText("--------------------------------", 48, "normal", "#666666", 48)
 
