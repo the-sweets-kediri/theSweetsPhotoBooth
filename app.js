@@ -52,7 +52,7 @@ const captions = [
 ]
 
 const captions2 = [
-  "Tag us @hellothesweets",
+  "You are so sweet!",
   "See you again!",
   "Bring your friends next time",
   "Sweet memories start here"
