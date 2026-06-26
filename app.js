@@ -230,8 +230,8 @@ async function startInstructionPreview(){
   }
 }
 
-function stopInstructionPreview(){
- if (instructionPreview) {
+function stopInstructionPreview() {
+  if (instructionPreview) {
     instructionPreview.pause()
     instructionPreview.srcObject = null
   }
@@ -239,49 +239,13 @@ function stopInstructionPreview(){
 
 async function startMainPreview() {
   const stream = await getCameraStream()
-
   stopInstructionPreview()
-
   video.srcObject = stream
   await video.play()
 }
 
-  /*mainStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-  video.srcObject = mainStream*/
-  
 async function startCamera() {
   await startMainPreview()
-}
-
-  const stream = await navigator.mediaDevices.getUserMedia({
-    video: {
-      facingMode: "user",
-      width: { ideal: 2560 },
-      height: { ideal: 1440 }
-    },
-    audio: false
-  })
-
-  video.srcObject = stream
-
-  await new Promise((resolve, reject) => {
-    const onReady = async () => {
-      try {
-        video.onloadedmetadata = null
-        await video.play()
-        resolve()
-      } catch (error) {
-        reject(error)
-      }
-    }
-
-    if (video.readyState >= 1 && video.videoWidth && video.videoHeight) {
-      onReady()
-      return
-    }
-
-    video.onloadedmetadata = onReady
-  })
 }
 
 async function startSession() {
@@ -302,6 +266,7 @@ async function startSession() {
   startSessionTimer()
   startCapture()
 }
+
 
 function countdown(sec) {
   return new Promise(resolve => {
