@@ -4,6 +4,7 @@ const BUCKET_NAME = "Photobooth"
 
 const video = document.getElementById("video")
 const instructionPreview = document.getElementById("instructionPreview")
+const cameraStream = null
 const photosContainer = document.getElementById("photos")
 const counter = document.getElementById("countdown")
 const retakeBtn = document.getElementById("retakeBtn")
@@ -199,18 +200,33 @@ function resetSession() {
 }
 
 function stopCameraStream() {
-  const stream = video.srcObject
-  if (!stream) return
-  stream.getTracks().forEach(track => track.stop())
-  video.srcObject = null
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(track => track.stop())
+    cameraStream = null
+  }
+
+  if (video) video.srcObject = null
+  if (instructionPreview) instructionPreview.srcObject = null
+}
+
+async function getCameraStream(){
+  if (cameraStream) return cameraStream
+
+  cameraStream = await navigator.mediaDevices.getUserMedia({
+    video: true,
+    audio: false
+  })
+
+  return cameraStream
 }
 
 async function startInstructionPreview(){
-  stopInstructionPreview()
+  const stream = await getCameraStream()
 
-  instructionStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+  if (video) video.srcObject = null
   if (instructionPreview) {
-    instructionPreview.srcObject = instructionStream
+    instructionPreview.srcObject = stream
+    await instructionPreview.play()
   }
 }
 
@@ -234,15 +250,17 @@ video.srcObject = null
   mainStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
   video.srcObject = mainStream
   
-async function startCamera() {
-  const existingStream = video.srcObject
-  if (existingStream) {
-    const hasLiveTrack = existingStream.getVideoTracks().some(track => track.readyState === "live")
-    if (hasLiveTrack) {
-      if (video.readyState >= 2) await video.play()
-      return
-    }
+async function startCamera(){
+  const stream = await getCameraStream()
+
+  if (instructionPreview) {
+    instructionPreview.pause()
+    instructionPreview.srcObject = null
   }
+
+  video.srcObject = stream
+  await video.play()
+}
 
   const stream = await navigator.mediaDevices.getUserMedia({
     video: {
