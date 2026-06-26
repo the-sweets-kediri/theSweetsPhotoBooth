@@ -4,7 +4,7 @@ const BUCKET_NAME = "Photobooth"
 
 const video = document.getElementById("video")
 const instructionPreview = document.getElementById("instructionPreview")
-const cameraStream = null
+let cameraStream = null
 const photosContainer = document.getElementById("photos")
 const counter = document.getElementById("countdown")
 const retakeBtn = document.getElementById("retakeBtn")
@@ -71,7 +71,7 @@ function showScreen(id) {
   document.getElementById(id).classList.add("active")
 }
 
-function goInstruction() {
+async function goInstruction() {
   showScreen("instructionScreen")
   await startInstructionPreview()
 }
