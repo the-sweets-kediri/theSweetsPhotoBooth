@@ -258,6 +258,21 @@ button:active {
 .retakeBtn { background: linear-gradient(135deg, #ff9b45, #ff6f61); }
 .printBtn { background: linear-gradient(135deg, #ff4fb5, #b70d62); }
 .stopBtn, .ghostBtn { background: rgba(255, 255, 255, 0.16); }
+.startBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+#unlockStartHotspot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 80px;
+  height: 80px;
+  z-index: 20;
+  background: transparent;
+}
 
 #strip {
   width: 220px;
