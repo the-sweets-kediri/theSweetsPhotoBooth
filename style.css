@@ -134,6 +134,7 @@ body::after {
 }
 
 .introCard {
+  text-align: center;
   position: relative;
   width: min(100%, 800px);
   background: rgba(255, 255, 255, 0.16);
