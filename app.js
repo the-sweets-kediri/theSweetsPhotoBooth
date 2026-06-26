@@ -15,6 +15,7 @@ const randomCaption2El = document.getElementById("randomCaption2")
 const qrCanvas = document.getElementById("qrCanvas")
 const qrStatus = document.getElementById("qrStatus")
 const downloadLink = document.getElementById("downloadLink")
+const startBtn = document.getElementById("startBtn")
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
@@ -25,6 +26,7 @@ const QR_TIMEOUT_MS = 60000
 const EXPORT_WIDTH = 1200
 const EXPORT_PADDING = 56
 const EXPORT_GAP = 24
+
 
 let retakeLeft = 2
 let sessionStartTime = null
@@ -75,7 +77,19 @@ async function goInstruction() {
   showScreen("instructionScreen")
   await startInstructionPreview()
 }
+function lockStartButton() {
+  if (startBtn) startBtn.disabled = true
+}
 
+function unlockStartButton() {
+  if (startBtn) startBtn.disabled = false
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowUp") {
+    unlockStartButton()
+  }
+})
 function updateDateTime() {
   const now = new Date()
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
@@ -378,6 +392,7 @@ function stopSessionForce() {
 video.srcObject = null
   
   stopCameraStream()
+  lockStartButton()
   showScreen("startScreen")
 }
 
@@ -581,3 +596,5 @@ async function printStrip() {
     isUploading = false
   }
 }
+lockStartButton()
+
