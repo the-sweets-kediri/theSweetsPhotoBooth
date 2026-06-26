@@ -3,6 +3,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const BUCKET_NAME = "Photobooth"
 
 const video = document.getElementById("video")
+const instructionPreview = document.getElementById("instructionPreview")
 const photosContainer = document.getElementById("photos")
 const counter = document.getElementById("countdown")
 const retakeBtn = document.getElementById("retakeBtn")
@@ -36,7 +37,8 @@ let currentDateTime = ""
 let currentCaption1 = ""
 let currentCaption2 = ""
 let qrCloseTimer = null
-
+let instructionStream = null
+let mainStream = null
 
 const captions = [
   "Life is sweeter with you",
@@ -70,6 +72,7 @@ function showScreen(id) {
 
 function goInstruction() {
   showScreen("instructionScreen")
+  await startInstructionPreview()
 }
 
 function updateDateTime() {
@@ -202,6 +205,35 @@ function stopCameraStream() {
   video.srcObject = null
 }
 
+async function startInstructionPreview(){
+  stopInstructionPreview()
+
+  instructionStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+  if (instructionPreview) {
+    instructionPreview.srcObject = instructionStream
+  }
+}
+
+function stopInstructionPreview(){
+  if (!instructionStream) return
+  instructionStream.getTracks().forEach(track => track.stop())
+  instructionStream = null
+  if (instructionPreview) {
+    instructionPreview.srcObject = null
+  }
+}
+
+async function startMainPreview(){
+  if (mainStream) {
+    mainStream.getTracks().forEach(track => track.stop())
+     mainStream = null
+}
+video.srcObject = null
+  }
+
+  mainStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+  video.srcObject = mainStream
+  
 async function startCamera() {
   const existingStream = video.srcObject
   if (existingStream) {
@@ -244,12 +276,14 @@ async function startCamera() {
 }
 
 async function startSession() {
+  stopInstructionPreview()
   showScreen("cameraScreen")
+  await startMainPreview()
   resetSession()
   updateRetakeUI()
 
   try {
-    await startCamera()
+    /*await startCamera()*/
   } catch (err) {
     console.error("Camera start failed:", err)
     alert("Kamera gagal dibuka. Pastikan izin kamera diizinkan dan halaman dibuka via HTTPS / localhost.")
@@ -363,6 +397,13 @@ function stopSessionForce() {
   counter.innerText = ""
   cancelAnimationFrame(animationFrame)
   resetProgressBar()
+
+  if (mainStream) {
+  mainStream.getTracks().forEach(track => track.stop())
+  mainStream = null
+}
+video.srcObject = null
+  
   stopCameraStream()
   showScreen("startScreen")
 }
