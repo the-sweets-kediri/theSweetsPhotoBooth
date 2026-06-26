@@ -273,7 +273,15 @@ button:active {
   z-index: 20;
   background: transparent;
 }
-
+#refreshHotspot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 80px;
+  height: 80px;
+  z-index: 30;
+  background: transparent;
+}
 #strip {
   width: 220px;
   background: white;
