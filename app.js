@@ -231,35 +231,26 @@ async function startInstructionPreview(){
 }
 
 function stopInstructionPreview(){
-  if (!instructionStream) return
-  instructionStream.getTracks().forEach(track => track.stop())
-  instructionStream = null
-  if (instructionPreview) {
-    instructionPreview.srcObject = null
-  }
-}
-
-async function startMainPreview(){
-  if (mainStream) {
-    mainStream.getTracks().forEach(track => track.stop())
-     mainStream = null
-}
-video.srcObject = null
-  }
-
-  mainStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-  video.srcObject = mainStream
-  
-async function startCamera(){
-  const stream = await getCameraStream()
-
-  if (instructionPreview) {
+ if (instructionPreview) {
     instructionPreview.pause()
     instructionPreview.srcObject = null
   }
+}
+
+async function startMainPreview() {
+  const stream = await getCameraStream()
+
+  stopInstructionPreview()
 
   video.srcObject = stream
   await video.play()
+}
+
+  /*mainStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+  video.srcObject = mainStream*/
+  
+async function startCamera() {
+  await startMainPreview()
 }
 
   const stream = await navigator.mediaDevices.getUserMedia({
@@ -296,12 +287,9 @@ async function startCamera(){
 async function startSession() {
   stopInstructionPreview()
   showScreen("cameraScreen")
-  await startMainPreview()
-  resetSession()
-  updateRetakeUI()
 
   try {
-    /*await startCamera()*/
+    await startMainPreview()
   } catch (err) {
     console.error("Camera start failed:", err)
     alert("Kamera gagal dibuka. Pastikan izin kamera diizinkan dan halaman dibuka via HTTPS / localhost.")
@@ -309,6 +297,8 @@ async function startSession() {
     return
   }
 
+  resetSession()
+  updateRetakeUI()
   startSessionTimer()
   startCapture()
 }
