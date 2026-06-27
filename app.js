@@ -392,7 +392,7 @@ function stopSessionForce() {
 video.srcObject = null
   
   stopCameraStream()
-  lockStartButton()
+  unlockStartButton()
   showScreen("startScreen")
 }
 
@@ -596,5 +596,5 @@ async function printStrip() {
     isUploading = false
   }
 }
-lockStartButton()
+unlockStartButton()
 
