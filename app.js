@@ -600,7 +600,7 @@ async function printStrip() {
     qrStatus.innerText = "Menyiapkan QR..."
     const blob = await renderStripBlob()
     const signedUrl = await uploadStripToSupabase(blob)
-    saveBlobLocally(blob)
+    /*saveBlobLocally(blob)*/
     stopCameraStream()
     await showQRCode(signedUrl)
   } catch (err) {
