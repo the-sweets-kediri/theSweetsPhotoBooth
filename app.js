@@ -508,6 +508,19 @@ async function renderStripBlob() {
     }, "image/png")
   })
 }
+function saveBlobLocally(blob) {
+  const fileName = `${currentSessionCode || "the-sweets"}-${Date.now()}.png`
+  const url = URL.createObjectURL(blob)
+
+  const a = document.createElement("a")
+  a.href = url
+  a.download = fileName
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
 
 async function createSignedUrlWithRetry(filePath, attempts = 5) {
   let lastError = null
@@ -587,6 +600,7 @@ async function printStrip() {
     qrStatus.innerText = "Menyiapkan QR..."
     const blob = await renderStripBlob()
     const signedUrl = await uploadStripToSupabase(blob)
+    saveBlobLocally(blob)
     stopCameraStream()
     await showQRCode(signedUrl)
   } catch (err) {
